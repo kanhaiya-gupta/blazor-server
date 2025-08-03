@@ -1,0 +1,16 @@
+AASX Digital Twin Analytics Framework
+
+Copyright (c) 2024 AASX Digital
+
+This software is provided as-is for demonstration and research purposes.
+
+The AASX Digital Twin Analytics Framework integrates:
+- FastAPI backend with .NET AAS Processor
+- Blazor WebAssembly AASX Viewer
+- Neo4j Knowledge Graph
+- Qdrant Vector Database
+- Redis Caching
+- SSL/TLS Security
+
+For more information, visit: https://www.aasx-digital.de
+
