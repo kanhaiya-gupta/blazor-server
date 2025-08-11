@@ -184,7 +184,7 @@ public class AASXFileServerAPIApiController : ControllerBase
     /// <summary>
     /// Returns a specific AASX package from the server by project path
     /// </summary>
-    /// <param name="projectPath">The project path in format "projectId/filename.aasx"</param>
+    /// <param name="projectPath">The project path in format "useCase/project/filename.aasx"</param>
     /// <response code="200">Requested AASX package</response>
     /// <response code="400">Bad Request, e.g. the request parameters of the format of the request body is wrong.</response>
     /// <response code="401">Unauthorized, e.g. the server refused the authorization attempt.</response>
@@ -212,19 +212,24 @@ public class AASXFileServerAPIApiController : ControllerBase
             throw new NotAllowed($"Cannot proceed as {nameof(projectPath)} is null or empty");
         }
 
-        // Parse project path: "projectId/filename.aasx"
-        var pathParts = projectPath.Split('/', 2);
-        if (pathParts.Length != 2)
+        // Parse project path: "useCase/project/filename.aasx"
+        var pathParts = projectPath.Split('/');
+        if (pathParts.Length != 3)
         {
-            throw new NotAllowed($"Invalid project path format. Expected 'projectId/filename.aasx', got '{projectPath}'");
+            throw new NotAllowed($"Invalid project path format. Expected 'useCase/project/filename.aasx', got '{projectPath}'");
         }
 
-        var projectId = pathParts[0];
-        var filename = pathParts[1];
+        var useCase = pathParts[0];
+        var project = pathParts[1];
+        var filename = pathParts[2];
 
-        // Construct the full file path
+        // Convert logical path (with spaces) to physical path (with underscores)
+        var physicalUseCase = useCase.Replace(" ", "_");
+        var physicalProject = project.Replace(" ", "_");
+
+        // Construct the full file path using physical path components
         var dataPath = System.Environment.GetEnvironmentVariable("AASX_DATA_PATH") ?? "/app/data";
-        var projectPathFull = Path.Combine(dataPath, "projects", projectId, filename);
+        var projectPathFull = Path.Combine(dataPath, physicalUseCase, physicalProject, filename);
 
         if (!System.IO.File.Exists(projectPathFull))
         {

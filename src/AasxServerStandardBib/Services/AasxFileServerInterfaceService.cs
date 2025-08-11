@@ -132,9 +132,9 @@ namespace AasxServerStandardBib.Services
         }
 
         /// <summary>
-        /// Gets an AASX package by project path (projectId/filename.aasx)
+        /// Gets an AASX package by project path (useCase/project/filename.aasx)
         /// </summary>
-        /// <param name="projectPath">Project path in format "projectId/filename.aasx"</param>
+        /// <param name="projectPath">Project path in format "useCase/project/filename.aasx"</param>
         /// <param name="content">File content</param>
         /// <param name="fileSize">File size</param>
         /// <param name="aas">Asset Administration Shell</param>
@@ -145,19 +145,24 @@ namespace AasxServerStandardBib.Services
             content = null;
             fileSize = 0;
 
-            // Parse project path
-            var pathParts = projectPath.Split('/', 2);
-            if (pathParts.Length != 2)
+            // Parse project path - handle 3 parts: useCase/project/filename
+            var pathParts = projectPath.Split('/');
+            if (pathParts.Length != 3)
             {
-                _logger.LogError($"Invalid project path format: {projectPath}");
+                _logger.LogError($"Invalid project path format: {projectPath}. Expected 'useCase/project/filename.aasx'");
                 return null;
             }
 
-            var projectId = pathParts[0];
-            var filename = pathParts[1];
+            var useCase = pathParts[0];
+            var project = pathParts[1];
+            var filename = pathParts[2];
 
-            // Construct full file path
-            var fullPath = Path.Combine(AasxHttpContextHelper.DataPath, "projects", projectId, filename);
+            // Convert logical path (with spaces) to physical path (with underscores)
+            var physicalUseCase = useCase.Replace(" ", "_");
+            var physicalProject = project.Replace(" ", "_");
+
+            // Construct full file path using physical path components
+            var fullPath = Path.Combine(AasxHttpContextHelper.DataPath, physicalUseCase, physicalProject, filename);
             
             if (!System.IO.File.Exists(fullPath))
             {

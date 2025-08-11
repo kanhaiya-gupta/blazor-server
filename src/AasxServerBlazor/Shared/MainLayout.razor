@@ -410,12 +410,75 @@
                     _isLoading = true;
                     Console.WriteLine($"Loading file from URL parameter: {fileParam}");
                     
-                    // Load the file directly from the existing data directory
-                    var loadedPackage = Program.LoadPackageByProjectPath<AasCore.Aas3_0.Environment>(out bool success, out int packageIndex, fileParam);
+                    // Check if fileParam is a file_id (UUID format) or a file path
+                    bool isFileId = fileParam.Contains("-") && fileParam.Length == 36; // Basic UUID check
+                    
+                    string filePath = fileParam;
+                    
+                                         if (isFileId)
+                     {
+                         // It's a file_id, need to resolve to file path via API
+                         Console.WriteLine($"File parameter is a file_id: {fileParam}");
+                         try
+                         {
+                             // Call the AASX API to get file path from file_id
+                             using (var httpClient = new System.Net.Http.HttpClient())
+                             {
+                                 httpClient.Timeout = TimeSpan.FromSeconds(30);
+                                 var apiUrl = $"http://host.docker.internal:8000/api/aasx/files/{fileParam}/path";
+                                 Console.WriteLine($"Calling API: {apiUrl}");
+                                 
+                                 var response = await httpClient.GetAsync(apiUrl);
+                                 if (response.IsSuccessStatusCode)
+                                 {
+                                     var jsonResponse = await response.Content.ReadAsStringAsync();
+                                     Console.WriteLine($"API Response: {jsonResponse}");
+                                     
+                                     // Parse the JSON response to get the file path
+                                     using (var jsonDoc = System.Text.Json.JsonDocument.Parse(jsonResponse))
+                                     {
+                                         var root = jsonDoc.RootElement;
+                                         
+                                         // Extract logical_path which is already in the correct format
+                                         if (root.TryGetProperty("logical_path", out var logicalPath))
+                                         {
+                                             filePath = logicalPath.GetString();
+                                             Console.WriteLine($"Resolved file path: {filePath}");
+                                         }
+                                         else
+                                         {
+                                             Console.WriteLine("Failed to get use_case_name or filename from API response");
+                                             _isLoading = false;
+                                             return;
+                                         }
+                                     }
+                                 }
+                                 else
+                                 {
+                                     Console.WriteLine($"API call failed with status: {response.StatusCode}");
+                                     _isLoading = false;
+                                     return;
+                                 }
+                             }
+                         }
+                         catch (Exception apiEx)
+                         {
+                             Console.WriteLine($"Error calling API to resolve file_id: {apiEx.Message}");
+                             _isLoading = false;
+                             return;
+                         }
+                     }
+                     else
+                     {
+                         Console.WriteLine($"File parameter is a file path: {fileParam}");
+                     }
+                    
+                    // Load the file using the resolved path
+                    var loadedPackage = Program.LoadPackageByProjectPath<AasCore.Aas3_0.Environment>(out bool success, out int packageIndex, filePath);
                     if (success)
                     {
                         Console.WriteLine($"Successfully loaded package at index: {packageIndex}");
-                        _lastLoadedFile = fileParam; // Mark as loaded
+                        _lastLoadedFile = fileParam; // Mark as loaded (keep original file_id for tracking)
                         Program.signalNewData(2);
                         Console.WriteLine("File loaded successfully and data is ready for display");
                         
@@ -426,7 +489,7 @@
                     }
                     else
                     {
-                        Console.WriteLine("Failed to load package into Blazor viewer");
+                        Console.WriteLine($"Failed to load package into Blazor viewer. Path: {filePath}");
                     }
                     
                     _isLoading = false;

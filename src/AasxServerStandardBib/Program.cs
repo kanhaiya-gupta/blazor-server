@@ -317,12 +317,12 @@ namespace AasxServer
         }
 
         /// <summary>
-        /// Loads a package by project path (projectId/filename.aasx)
+        /// Loads a package by project path (useCase/project/filename.aasx)
         /// </summary>
         /// <typeparam name="T">Type to return</typeparam>
         /// <param name="success">Success flag</param>
         /// <param name="packageIndex">Package index</param>
-        /// <param name="projectPath">Project path in format "projectId/filename.aasx"</param>
+        /// <param name="projectPath">Project path in format "useCase/project/filename.aasx"</param>
         /// <returns>Loaded package</returns>
         public static T? LoadPackageByProjectPath<T>(out bool success, out int packageIndex, string projectPath)
         {
@@ -336,19 +336,24 @@ namespace AasxServer
                 return output;
             }
 
-            // Parse project path
-            var pathParts = projectPath.Split('/', 2);
-            if (pathParts.Length != 2)
+            // Parse project path - handle 3 parts: useCase/project/filename
+            var pathParts = projectPath.Split('/');
+            if (pathParts.Length != 3)
             {
-                Console.WriteLine($"Invalid project path format: {projectPath}");
+                Console.WriteLine($"Invalid project path format: {projectPath}. Expected 'useCase/project/filename.aasx'");
                 return output;
             }
 
-            var projectId = pathParts[0];
-            var filename = pathParts[1];
+            var useCase = pathParts[0];
+            var project = pathParts[1];
+            var filename = pathParts[2];
 
-            // Construct full file path
-            var fullPath = Path.Combine(AasxHttpContextHelper.DataPath, "projects", projectId, filename);
+            // Convert logical path (with spaces) to physical path (with underscores)
+            var physicalUseCase = useCase.Replace(" ", "_");
+            var physicalProject = project.Replace(" ", "_");
+
+            // Construct full file path using physical path components
+            var fullPath = Path.Combine(AasxHttpContextHelper.DataPath, physicalUseCase, physicalProject, filename);
             
             if (!System.IO.File.Exists(fullPath))
             {

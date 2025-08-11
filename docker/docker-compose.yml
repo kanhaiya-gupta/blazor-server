@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  aasx-blazor-standalone:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - ../../data:/app/data
+    environment:
+      - AASX_DATA_PATH=./data
+      - AASX_SERVER_PORT=5001
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: FastAPI server for testing integration
+  aasx-fastapi-standalone:
+    image: python:3.11-slim
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../webapp:/app
+      - ../../data:/app/data
+    working_dir: /app
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      - FASTAPI_HOST=0.0.0.0
+      - FASTAPI_PORT=8000
+      - DATABASE_URL=sqlite:///data/aasx_database.db
+    restart: unless-stopped
+    depends_on:
+      - aasx-blazor-standalone
+
+volumes:
+  data:
+    driver: local 

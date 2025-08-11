@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+
+# Build outputs
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation
+docs/
+*.md
+README*
+
+# Test files
+test/
+tests/
+*Test*
+*Tests*
+
+# Backup files
+*.bak
+*.backup
+
+# Docker files (avoid recursive copying)
+docker/
+
+# Data files (will be mounted at runtime)
+data/
+*.aasx
+
+# Configuration files that might contain secrets
+*.config
+appsettings.*.json
+!appsettings.json 
